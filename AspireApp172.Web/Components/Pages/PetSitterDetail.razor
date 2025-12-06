@@ -1,0 +1,329 @@
+@page "/petsitters/{id:int}"
+@using AspireApp172.ApiService.Models
+@using AspireApp172.Web.Services
+@inject PetSitterApiClient ApiClient
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>@(petSitter?.Name ?? "Pet Sitter Details")</PageTitle>
+
+<div class="container">
+    @if (petSitter == null)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Loading pet sitter details...</p>
+        </div>
+    }
+    else
+    {
+        <nav aria-label="breadcrumb" class="mt-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/petsitters">Pet Sitters</a></li>
+                <li class="breadcrumb-item active" aria-current="page">@petSitter.Name</li>
+            </ol>
+        </nav>
+
+        <div class="row mt-4">
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <img src="@petSitter.ImageUrl" class="card-img-top" alt="@petSitter.Name" style="height: 400px; object-fit: cover;">
+                    <div class="card-body">
+                        <h1 class="card-title display-5">@petSitter.Name</h1>
+                        <p class="text-muted lead">
+                            <span class="bi bi-geo-alt-fill"></span> @petSitter.Location
+                        </p>
+                        
+                        <div class="mb-3">
+                            @for (int i = 0; i < 5; i++)
+                            {
+                                var starIndex = i;
+                                @if (starIndex < Math.Floor(petSitter.Rating))
+                                {
+                                    <span class="bi bi-star-fill text-warning fs-5"></span>
+                                }
+                                else if (starIndex < petSitter.Rating)
+                                {
+                                    <span class="bi bi-star-half text-warning fs-5"></span>
+                                }
+                                else
+                                {
+                                    <span class="bi bi-star text-warning fs-5"></span>
+                                }
+                            }
+                            <span class="ms-2 fs-5"><strong>@petSitter.Rating.ToString("F1")</strong></span>
+                            <span class="text-muted ms-1">(@petSitter.ReviewCount reviews)</span>
+                        </div>
+
+                        <h3 class="mt-4">About Me</h3>
+                        <p class="lead">@petSitter.Bio</p>
+
+                        <h3 class="mt-4">Pet Types Accepted</h3>
+                        <div class="mb-3">
+                            @foreach (var petType in petSitter.PetTypesAccepted)
+                            {
+                                <span class="badge bg-primary me-2 fs-6 p-2">@petType</span>
+                            }
+                        </div>
+
+                        <h3 class="mt-4">Amenities & Features</h3>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">
+                                        <span class="bi bi-check-circle-fill text-success"></span> 
+                                        Max @petSitter.MaxPets pets at once
+                                    </li>
+                                    @if (petSitter.HasYard)
+                                    {
+                                        <li class="mb-2">
+                                            <span class="bi bi-check-circle-fill text-success"></span> 
+                                            Has Yard
+                                        </li>
+                                    }
+                                    @if (petSitter.AcceptsLargeDogs)
+                                    {
+                                        <li class="mb-2">
+                                            <span class="bi bi-check-circle-fill text-success"></span> 
+                                            Accepts Large Dogs
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    @foreach (var amenity in petSitter.Amenities)
+                                    {
+                                        <li class="mb-2">
+                                            <span class="bi bi-check-circle-fill text-success"></span> 
+                                            @amenity
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+
+                        <h3 class="mt-4">Reviews</h3>
+                        @if (reviews == null || !reviews.Any())
+                        {
+                            <p class="text-muted">No reviews yet.</p>
+                        }
+                        else
+                        {
+                            @foreach (var review in reviews)
+                            {
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-0">@review.ReviewerName</h6>
+                                                <small class="text-muted">@review.CreatedAt.ToString("MMMM dd, yyyy")</small>
+                                            </div>
+                                            <div>
+                                                @for (int i = 0; i < review.Rating; i++)
+                                                {
+                                                    <span class="bi bi-star-fill text-warning"></span>
+                                                }
+                                            </div>
+                                        </div>
+                                        <p class="mt-2 mb-0">@review.Comment</p>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card sticky-top" style="top: 20px;">
+                    <div class="card-body">
+                        <h2 class="text-primary mb-3">$@petSitter.PricePerNight<small class="text-muted">/night</small></h2>
+                        
+                        @if (!showBookingForm)
+                        {
+                            <button class="btn btn-primary btn-lg w-100 mb-3" @onclick="() => showBookingForm = true">
+                                <span class="bi bi-calendar-check"></span> Book Now
+                            </button>
+                        }
+                        else
+                        {
+                            <div class="booking-form">
+                                <h4 class="mb-3">Book Your Stay</h4>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Your Name</label>
+                                    <input type="text" class="form-control" @bind="bookingRequest.PetOwnerName" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" @bind="bookingRequest.PetOwnerEmail" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Phone</label>
+                                    <input type="tel" class="form-control" @bind="bookingRequest.PetOwnerPhone" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Check-in Date</label>
+                                    <input type="date" class="form-control" @bind="checkInDate" min="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Check-out Date</label>
+                                    <input type="date" class="form-control" @bind="checkOutDate" min="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Special Requests</label>
+                                    <textarea class="form-control" rows="3" @bind="bookingRequest.SpecialRequests"></textarea>
+                                </div>
+
+                                @if (numberOfNights > 0)
+                                {
+                                    <div class="alert alert-info">
+                                        <strong>Total:</strong> $@totalPrice.ToString("F2") (@numberOfNights nights)
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(bookingMessage))
+                                {
+                                    <div class="alert @(bookingSuccess ? "alert-success" : "alert-danger")">
+                                        @bookingMessage
+                                    </div>
+                                }
+
+                                <button class="btn btn-primary w-100 mb-2" @onclick="SubmitBooking" disabled="@isSubmitting">
+                                    @if (isSubmitting)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                    }
+                                    Confirm Booking
+                                </button>
+                                <button class="btn btn-outline-secondary w-100" @onclick="() => showBookingForm = false">
+                                    Cancel
+                                </button>
+                            </div>
+                        }
+
+                        <hr />
+                        
+                        <h5 class="mb-3">Contact Information</h5>
+                        <p class="mb-2">
+                            <span class="bi bi-envelope-fill"></span> 
+                            <a href="mailto:@petSitter.Email">@petSitter.Email</a>
+                        </p>
+                        <p class="mb-0">
+                            <span class="bi bi-telephone-fill"></span> 
+                            <a href="tel:@petSitter.Phone">@petSitter.Phone</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private PetSitter? petSitter;
+    private List<Review>? reviews;
+    private bool showBookingForm = false;
+    private bool isSubmitting = false;
+    private bool bookingSuccess = false;
+    private string bookingMessage = "";
+    
+    private Booking bookingRequest = new()
+    {
+        PetOwnerName = "",
+        PetOwnerEmail = "",
+        PetOwnerPhone = ""
+    };
+
+    private DateTime checkInDate = DateTime.Now.AddDays(1);
+    private DateTime checkOutDate = DateTime.Now.AddDays(2);
+
+    private int numberOfNights => (checkOutDate - checkInDate).Days > 0 ? (checkOutDate - checkInDate).Days : 0;
+    private decimal totalPrice => numberOfNights * (petSitter?.PricePerNight ?? 0);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        petSitter = await ApiClient.GetPetSitterByIdAsync(Id);
+        if (petSitter != null)
+        {
+            reviews = await ApiClient.GetReviewsByPetSitterAsync(Id);
+        }
+    }
+
+    private async Task SubmitBooking()
+    {
+        if (petSitter == null) return;
+
+        // Validate
+        if (string.IsNullOrWhiteSpace(bookingRequest.PetOwnerName) ||
+            string.IsNullOrWhiteSpace(bookingRequest.PetOwnerEmail) ||
+            string.IsNullOrWhiteSpace(bookingRequest.PetOwnerPhone))
+        {
+            bookingMessage = "Please fill in all required fields.";
+            bookingSuccess = false;
+            return;
+        }
+
+        if (numberOfNights <= 0)
+        {
+            bookingMessage = "Please select valid check-in and check-out dates.";
+            bookingSuccess = false;
+            return;
+        }
+
+        isSubmitting = true;
+        bookingMessage = "";
+
+        try
+        {
+            bookingRequest.PetSitterId = petSitter.Id;
+            bookingRequest.CheckInDate = checkInDate;
+            bookingRequest.CheckOutDate = checkOutDate;
+            bookingRequest.TotalPrice = totalPrice;
+            bookingRequest.Status = BookingStatus.Pending;
+
+            var result = await ApiClient.CreateBookingAsync(bookingRequest);
+            
+            if (result != null)
+            {
+                bookingSuccess = true;
+                bookingMessage = $"Booking submitted successfully! Booking ID: {result.Id}. The pet sitter will contact you soon.";
+                
+                // Reset form after 3 seconds
+                await Task.Delay(3000);
+                showBookingForm = false;
+                bookingRequest = new()
+                {
+                    PetOwnerName = "",
+                    PetOwnerEmail = "",
+                    PetOwnerPhone = ""
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            bookingSuccess = false;
+            bookingMessage = $"Error submitting booking: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

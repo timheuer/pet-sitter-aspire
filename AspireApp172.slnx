@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="AspireApp172.ApiService/AspireApp172.ApiService.csproj" />
+  <Project Path="AspireApp172.AppHost/AspireApp172.AppHost.csproj" />
+  <Project Path="AspireApp172.ServiceDefaults/AspireApp172.ServiceDefaults.csproj" />
+  <Project Path="AspireApp172.Web/AspireApp172.Web.csproj" />
+</Solution>

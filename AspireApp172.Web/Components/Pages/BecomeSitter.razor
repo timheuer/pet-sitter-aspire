@@ -1,0 +1,343 @@
+@page "/becomesitter"
+@using AspireApp172.ApiService.Models
+@using AspireApp172.Web.Services
+@inject PetSitterApiClient ApiClient
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Become a Pet Sitter</PageTitle>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="display-5 mb-3">
+                <span class="bi bi-heart-fill text-danger"></span> Become a Pet Sitter
+            </h1>
+            <p class="lead mb-4">Join our community of trusted pet sitters and start earning while caring for adorable pets!</p>
+
+            @if (!showForm)
+            {
+                <div class="row mb-4">
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100 text-center border-primary">
+                            <div class="card-body">
+                                <div class="display-4 text-primary mb-3">
+                                    <span class="bi bi-currency-dollar"></span>
+                                </div>
+                                <h4>Earn Extra Income</h4>
+                                <p class="text-muted">Set your own rates and schedule. Earn money doing what you love!</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100 text-center border-success">
+                            <div class="card-body">
+                                <div class="display-4 text-success mb-3">
+                                    <span class="bi bi-shield-check"></span>
+                                </div>
+                                <h4>Trusted Platform</h4>
+                                <p class="text-muted">Join a verified community of pet lovers with reviews and ratings.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100 text-center border-info">
+                            <div class="card-body">
+                                <div class="display-4 text-info mb-3">
+                                    <span class="bi bi-calendar-heart"></span>
+                                </div>
+                                <h4>Flexible Schedule</h4>
+                                <p class="text-muted">Work when you want. You're in control of your availability.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <button class="btn btn-primary btn-lg" @onclick="() => showForm = true">
+                        <span class="bi bi-pencil-square"></span> Get Started
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="mb-4">Sitter Registration Form</h3>
+
+                        @if (!string.IsNullOrEmpty(submitMessage))
+                        {
+                            <div class="alert @(submitSuccess ? "alert-success" : "alert-danger")">
+                                @submitMessage
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label">Full Name *</label>
+                            <input type="text" class="form-control" @bind="newSitter.Name" placeholder="John Doe" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Location *</label>
+                            <input type="text" class="form-control" @bind="newSitter.Location" placeholder="Seattle, WA" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email *</label>
+                            <input type="email" class="form-control" @bind="newSitter.Email" placeholder="john@example.com" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Phone *</label>
+                            <input type="tel" class="form-control" @bind="newSitter.Phone" placeholder="(555) 123-4567" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">About You *</label>
+                            <textarea class="form-control" rows="4" @bind="newSitter.Bio" 
+                                placeholder="Tell us about your experience with pets, your home environment, and why you'd be a great pet sitter..."></textarea>
+                            <small class="text-muted">Minimum 50 characters</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Price per Night *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" @bind="newSitter.PricePerNight" min="0" step="5" />
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Maximum Pets *</label>
+                                <input type="number" class="form-control" @bind="newSitter.MaxPets" min="1" max="10" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Pet Types You Accept *</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="acceptsDogs" @bind="acceptsDogs">
+                                <label class="form-check-label" for="acceptsDogs">Dogs</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="acceptsCats" @bind="acceptsCats">
+                                <label class="form-check-label" for="acceptsCats">Cats</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="acceptsBirds" @bind="acceptsBirds">
+                                <label class="form-check-label" for="acceptsBirds">Birds</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="acceptsSmallAnimals" @bind="acceptsSmallAnimals">
+                                <label class="form-check-label" for="acceptsSmallAnimals">Small Animals (rabbits, hamsters, etc.)</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="hasYard" @bind="newSitter.HasYard">
+                                <label class="form-check-label" for="hasYard">
+                                    I have a yard or outdoor space
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="acceptsLargeDogs" @bind="newSitter.AcceptsLargeDogs">
+                                <label class="form-check-label" for="acceptsLargeDogs">
+                                    I can accommodate large dogs
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Amenities & Services</label>
+                            <input type="text" class="form-control mb-2" @bind="newAmenity" placeholder="e.g., Daily walks, Photo updates, etc." />
+                            <button type="button" class="btn btn-sm btn-outline-primary" @onclick="AddAmenity">
+                                <span class="bi bi-plus-circle"></span> Add Amenity
+                            </button>
+                            @if (newSitter.Amenities.Any())
+                            {
+                                <div class="mt-2">
+                                    @foreach (var amenity in newSitter.Amenities)
+                                    {
+                                        <span class="badge bg-primary me-2 mb-2">
+                                            @amenity
+                                            <button type="button" class="btn-close btn-close-white ms-2" style="font-size: 0.7em;" 
+                                                @onclick="() => RemoveAmenity(amenity)"></button>
+                                        </span>
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Profile Photo URL (optional)</label>
+                            <input type="url" class="form-control" @bind="newSitter.ImageUrl" 
+                                placeholder="https://example.com/photo.jpg" />
+                            <small class="text-muted">Leave blank for default image</small>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button class="btn btn-outline-secondary" @onclick="CancelForm">
+                                Cancel
+                            </button>
+                            <button class="btn btn-primary" @onclick="SubmitApplication" disabled="@isSubmitting">
+                                @if (isSubmitting)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                }
+                                Submit Application
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool showForm = false;
+    private bool isSubmitting = false;
+    private bool submitSuccess = false;
+    private string submitMessage = "";
+    private string newAmenity = "";
+
+    private bool acceptsDogs = false;
+    private bool acceptsCats = false;
+    private bool acceptsBirds = false;
+    private bool acceptsSmallAnimals = false;
+
+    private PetSitter newSitter = new()
+    {
+        Name = "",
+        Location = "",
+        Email = "",
+        Phone = "",
+        Bio = "",
+        PricePerNight = 40,
+        MaxPets = 2,
+        Rating = 0,
+        ReviewCount = 0
+    };
+
+    private void AddAmenity()
+    {
+        if (!string.IsNullOrWhiteSpace(newAmenity) && !newSitter.Amenities.Contains(newAmenity))
+        {
+            newSitter.Amenities.Add(newAmenity);
+            newAmenity = "";
+        }
+    }
+
+    private void RemoveAmenity(string amenity)
+    {
+        newSitter.Amenities.Remove(amenity);
+    }
+
+    private void CancelForm()
+    {
+        showForm = false;
+        ResetForm();
+    }
+
+    private void ResetForm()
+    {
+        newSitter = new()
+        {
+            Name = "",
+            Location = "",
+            Email = "",
+            Phone = "",
+            Bio = "",
+            PricePerNight = 40,
+            MaxPets = 2,
+            Rating = 0,
+            ReviewCount = 0
+        };
+        acceptsDogs = false;
+        acceptsCats = false;
+        acceptsBirds = false;
+        acceptsSmallAnimals = false;
+        submitMessage = "";
+    }
+
+    private async Task SubmitApplication()
+    {
+        // Build pet types list
+        newSitter.PetTypesAccepted.Clear();
+        if (acceptsDogs) newSitter.PetTypesAccepted.Add("Dog");
+        if (acceptsCats) newSitter.PetTypesAccepted.Add("Cat");
+        if (acceptsBirds) newSitter.PetTypesAccepted.Add("Bird");
+        if (acceptsSmallAnimals) newSitter.PetTypesAccepted.Add("Small Animals");
+
+        // Validation
+        if (string.IsNullOrWhiteSpace(newSitter.Name) ||
+            string.IsNullOrWhiteSpace(newSitter.Location) ||
+            string.IsNullOrWhiteSpace(newSitter.Email) ||
+            string.IsNullOrWhiteSpace(newSitter.Phone) ||
+            string.IsNullOrWhiteSpace(newSitter.Bio))
+        {
+            submitMessage = "Please fill in all required fields.";
+            submitSuccess = false;
+            return;
+        }
+
+        if (newSitter.Bio.Length < 50)
+        {
+            submitMessage = "Bio must be at least 50 characters long.";
+            submitSuccess = false;
+            return;
+        }
+
+        if (!newSitter.PetTypesAccepted.Any())
+        {
+            submitMessage = "Please select at least one pet type you can care for.";
+            submitSuccess = false;
+            return;
+        }
+
+        if (newSitter.PricePerNight <= 0)
+        {
+            submitMessage = "Please enter a valid price per night.";
+            submitSuccess = false;
+            return;
+        }
+
+        // Set default image if none provided
+        if (string.IsNullOrWhiteSpace(newSitter.ImageUrl))
+        {
+            newSitter.ImageUrl = "https://randomuser.me/api/portraits/lego/1.jpg";
+        }
+
+        isSubmitting = true;
+        submitMessage = "";
+
+        try
+        {
+            var result = await ApiClient.CreatePetSitterAsync(newSitter);
+            
+            if (result != null)
+            {
+                submitSuccess = true;
+                submitMessage = "Application submitted successfully! You can now start receiving booking requests.";
+                
+                // Navigate to pet sitters page after 3 seconds
+                await Task.Delay(3000);
+                Navigation.NavigateTo("/petsitters");
+            }
+        }
+        catch (Exception ex)
+        {
+            submitSuccess = false;
+            submitMessage = $"Error submitting application: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

@@ -1,0 +1,170 @@
+@page "/petsitters"
+@using AspireApp172.ApiService.Models
+@using AspireApp172.Web.Services
+@inject PetSitterApiClient ApiClient
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Find Pet Sitters</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4 mb-3">
+                <span class="bi bi-heart-fill text-danger"></span> Find Your Perfect Pet Sitter
+            </h1>
+            <p class="lead">Trusted, loving care for your furry friends while you're away</p>
+        </div>
+    </div>
+
+    @if (petSitters == null)
+    {
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Loading pet sitters...</p>
+        </div>
+    }
+    else if (petSitters.Count == 0)
+    {
+        <div class="alert alert-info">
+            <h4 class="alert-heading">No pet sitters available</h4>
+            <p>Check back later for available pet sitters in your area.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <input type="text" class="form-control" placeholder="Search by location..." @bind="searchLocation" @bind:event="oninput" />
+            </div>
+            <div class="col-md-4">
+                <select class="form-select" @bind="filterPetType">
+                    <option value="">All Pet Types</option>
+                    <option value="Dog">Dogs</option>
+                    <option value="Cat">Cats</option>
+                    <option value="Bird">Birds</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="hasYardFilter" @bind="filterHasYard">
+                    <label class="form-check-label" for="hasYardFilter">
+                        Has Yard
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            @foreach (var sitter in FilteredPetSitters)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm hover-card" style="cursor: pointer;" @onclick="() => NavigateToDetail(sitter.Id)">
+                        <img src="@sitter.ImageUrl" class="card-img-top" alt="@sitter.Name" style="height: 200px; object-fit: cover;">
+                        <div class="card-body">
+                            <h5 class="card-title">@sitter.Name</h5>
+                            <p class="text-muted mb-2">
+                                <span class="bi bi-geo-alt-fill"></span> @sitter.Location
+                            </p>
+                            <div class="mb-2">
+                                @for (int i = 0; i < 5; i++)
+                                {
+                                    var starIndex = i;
+                                    @if (starIndex < Math.Floor(sitter.Rating))
+                                    {
+                                        <span class="bi bi-star-fill text-warning"></span>
+                                    }
+                                    else if (starIndex < sitter.Rating)
+                                    {
+                                        <span class="bi bi-star-half text-warning"></span>
+                                    }
+                                    else
+                                    {
+                                        <span class="bi bi-star text-warning"></span>
+                                    }
+                                }
+                                <span class="text-muted ms-1">(@sitter.ReviewCount reviews)</span>
+                            </div>
+                            <p class="card-text text-truncate-2" style="min-height: 3em;">@sitter.Bio</p>
+                            <div class="mb-2">
+                                @foreach (var petType in sitter.PetTypesAccepted.Take(3))
+                                {
+                                    <span class="badge bg-primary me-1">@petType</span>
+                                }
+                            </div>
+                            @if (sitter.HasYard)
+                            {
+                                <span class="badge bg-success me-1">
+                                    <span class="bi bi-tree-fill"></span> Has Yard
+                                </span>
+                            }
+                            @if (sitter.AcceptsLargeDogs)
+                            {
+                                <span class="badge bg-info">
+                                    Large Dogs OK
+                                </span>
+                            }
+                            <div class="mt-3">
+                                <h4 class="text-primary mb-0">$@sitter.PricePerNight<small class="text-muted">/night</small></h4>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <button class="btn btn-primary w-100">View Details</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .hover-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .text-truncate-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+
+@code {
+    private List<PetSitter>? petSitters;
+    private string searchLocation = "";
+    private string filterPetType = "";
+    private bool filterHasYard = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        petSitters = await ApiClient.GetPetSittersAsync();
+    }
+
+    private IEnumerable<PetSitter> FilteredPetSitters
+    {
+        get
+        {
+            if (petSitters == null) return Enumerable.Empty<PetSitter>();
+
+            return petSitters.Where(s =>
+                (string.IsNullOrWhiteSpace(searchLocation) || s.Location.Contains(searchLocation, StringComparison.OrdinalIgnoreCase)) &&
+                (string.IsNullOrWhiteSpace(filterPetType) || s.PetTypesAccepted.Contains(filterPetType)) &&
+                (!filterHasYard || s.HasYard)
+            );
+        }
+    }
+
+    private void NavigateToDetail(int id)
+    {
+        Navigation.NavigateTo($"/petsitters/{id}");
+    }
+}

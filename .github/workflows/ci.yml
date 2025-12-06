@@ -1,0 +1,39 @@
+name: CI
+
+on:
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
+    workflow_dispatch:
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        env:
+            DOTNET_NOLOGO: true
+            DOTNET_CLI_TELEMETRY_OPTOUT: true
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup .NET SDK
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: "10.x"
+                  cache: true
+
+            - name: Setup Aspire CLI
+              id: setup-aspire
+              uses: timheuer/setup-aspire@main
+
+            - name: Restore
+              run: dotnet restore AspireApp172.AppHost/AspireApp172.AppHost.csproj
+
+            - name: Build
+              run: dotnet build AspireApp172.AppHost/AspireApp172.AppHost.csproj --configuration Release --no-restore
+
+            - name: Aspire CLI version
+              run: |
+                  aspire --version
+                  echo "Aspire CLI version: ${{ steps.setup-aspire.outputs.version }}"
