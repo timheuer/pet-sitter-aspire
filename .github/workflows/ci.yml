@@ -25,6 +25,8 @@ jobs:
             - name: Setup Aspire CLI
               id: setup-aspire
               uses: timheuer/setup-aspire@v0.1.0
+              with:
+                  quality: dev
 
             - name: Restore
               run: dotnet restore AspireApp172.AppHost/AspireApp172.AppHost.csproj
