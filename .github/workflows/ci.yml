@@ -35,4 +35,4 @@ jobs:
             - name: Aspire CLI version
               run: |
                   aspire --version
-                  echo "Aspire CLI version: ${{ steps.setup-aspire.outputs.version }}"
+                  echo "Aspire CLI version: ${{ steps.setup-aspire.outputs.cli-version }}"
