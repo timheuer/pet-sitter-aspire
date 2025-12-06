@@ -21,7 +21,6 @@ jobs:
               uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: "10.x"
-                  cache: true
 
             - name: Setup Aspire CLI
               id: setup-aspire
